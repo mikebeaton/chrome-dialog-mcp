@@ -26,17 +26,17 @@ Check your Node version with `node --version` in PowerShell.
 
 ## Install
 
-Download `chrome-dialog-mcp-0.2.0-rc.7.tgz` from [GitHub Releases](https://github.com/mikebeaton/chrome-dialog-mcp/releases). The download can stay in any convenient folder; the install command chooses where the program will live.
+Download `chrome-dialog-mcp-0.2.0-rc.8.tgz` from [GitHub Releases](https://github.com/mikebeaton/chrome-dialog-mcp/releases). The download can stay in any convenient folder; the install command chooses where the program will live.
 
 Open PowerShell in the folder containing the download and run:
 
 ```powershell
-npm install --prefix C:/Tools/chrome-dialog-mcp/0.2.0-rc.7 --ignore-scripts --omit=dev ./chrome-dialog-mcp-0.2.0-rc.7.tgz
+npm install --prefix C:/Tools/chrome-dialog-mcp/0.2.0-rc.8 --ignore-scripts --omit=dev ./chrome-dialog-mcp-0.2.0-rc.8.tgz
 ```
 
-npm extracts the package and installs the libraries it needs. The `--prefix` option selects the installation folder: `C:\Tools\chrome-dialog-mcp\0.2.0-rc.7` in this example. Keep that folder while the MCP is configured.
+npm extracts the package and installs the libraries it needs. The `--prefix` option selects the installation folder: `C:\Tools\chrome-dialog-mcp\0.2.0-rc.8` in this example. Keep that folder while the MCP is configured.
 
-For an installation under your own Windows account, use a path such as `C:/Users/YOUR_NAME/Tools/chrome-dialog-mcp/0.2.0-rc.7` after `--prefix`. Replace `YOUR_NAME` with your Windows user-folder name.
+For an installation under your own Windows account, use a path such as `C:/Users/YOUR_NAME/Tools/chrome-dialog-mcp/0.2.0-rc.8` after `--prefix`. Replace `YOUR_NAME` with your Windows user-folder name.
 
 ## Configure Codex
 
@@ -47,7 +47,7 @@ Add the following settings to the file. If a `chrome_dialog` entry already exist
 ```toml
 [mcp_servers.chrome_dialog]
 command = "node"
-args = ["C:/Tools/chrome-dialog-mcp/0.2.0-rc.7/node_modules/chrome-dialog-mcp/src/adapter.js"]
+args = ["C:/Tools/chrome-dialog-mcp/0.2.0-rc.8/node_modules/chrome-dialog-mcp/src/adapter.js"]
 tool_timeout_sec = 60
 ```
 
@@ -62,7 +62,7 @@ Start a new local chat and ask:
 
 > Use chrome_dialog to launch a managed Chrome window.
 
-Choose a website yourself and manually type its address into the new window's address bar. Wait for the page to load, leave the window open, then tell Codex you are ready. Codex then takes over. Complete this step for each fresh managed window.
+Codex connects to the new window directly. If it cannot establish the website's identity and asks for help, choose a website yourself and manually type its address into that window's address bar. Wait for the page to load, leave the window open, then tell Codex you are ready to retry.
 
 Each agent launches a separate Chrome process and profile, keeping its browser state separate when you switch between chats.
 

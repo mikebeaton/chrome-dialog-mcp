@@ -116,8 +116,8 @@ test('installed Chrome: isolated browser sessions, exact counts, two adapters, p
     await until(() => driver.send('Runtime.evaluate', {
       expression: '({url: location.href, text: document.body?.innerText})', returnByValue: true,
     }, sessionId), r => r.result?.value?.url === startupUrl &&
-      r.result.value.text?.includes('choose any valid website yourself and manually type its address'),
-    'bundled file startup instructions did not load');
+      r.result.value.text?.trim() === 'Chrome Dialog MCP',
+    'bundled file startup page did not load');
   }
   const url = `http://127.0.0.1:${web.address().port}/settings`;
   await driver.send('Page.navigate', { url }, sessionId);

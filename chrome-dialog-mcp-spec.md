@@ -9,7 +9,7 @@ Only dialogs anticipated before their triggering operation are supported. Unexpe
 ## Supported sequence
 
 1. Call `launch_chrome()` without a token to create a new managed browser session. Keep the returned `browser_token` private and supply it on every subsequent call. Select that session's window using its Windows identifiers. Reuse requires explicitly supplying an existing token to `launch_chrome`; never silently adopt another agent's browser.
-2. A fresh window displays `assets/start.html` directly as a local file within the MCP installation. Ask the user to choose any valid website themselves and manually type its address into that window's address bar, wait for it to load, leave the window open and confirm when done. Do not supply or suggest a bootstrap URL or ask them to paste an agent-provided address. Wait for explicit confirmation before Computer Use input or capture. Agent-provided addresses failed in user trials where a subsequent manually entered, user-chosen address worked; the underlying cause remains unverified. Startup navigation and scripted redirects did not substitute for the manual step.
+2. A fresh window displays only **Chrome Dialog MCP** in `assets/start.html`, loaded directly from the MCP installation. After launch reports `ready`, connect to and inspect that window directly through Computer Use using the returned Windows identifiers, without checking for pending dialogs first. If Computer Use refuses access for insufficient site evidence or an undetermined browser URL, ask the user to choose a valid website themselves, manually type its address into that window, wait for it to load and confirm when done. Do not supply or suggest an address. Retry the connection after confirmation.
 3. Observe the page. Immediately before the anticipated dialog-producing operation, call `start_dialog_capture(browser_token)` and retain its capture token.
 4. Perform that operation without automatic post-action Computer Use capture.
 5. Call `get_captured_dialog(browser_token, capture_id)` exactly once. The read seals and consumes the capture interval.
@@ -18,11 +18,11 @@ Only dialogs anticipated before their triggering operation are supported. Unexpe
 
 On a failed capture, the agent stops handling attempts and informs the user, including the observed count if supplied. It does not respond, silently re-arm, repeat the operation or use a fallback lookup. The user resolves any remaining dialog. This stops the operation attempt, not the conversation turn.
 
-Computer Use capture while a native dialog is pending can end the turn because it cannot establish the browser URL. The MCP offers no general recovery from that stop. Its startup instructions do not change Computer Use policy or replace per-dialog authorisation.
+Computer Use capture while a native dialog is pending can end the turn because it cannot establish the browser URL. The MCP offers no general recovery from that stop. Its startup page does not change Computer Use policy or replace per-dialog authorisation.
 
 ## Architecture
 
-- **Chrome:** Each managed session has a separate Windows Chrome process/profile and loopback remote debugging endpoint. New instances open the bundled local instruction file, or an optional configured HTTP(S) URL. Explicit reuse retains the current page and never launches a replacement process.
+- **Chrome:** Each managed session has a separate Windows Chrome process/profile and loopback remote debugging endpoint. New instances open the bundled local startup file, or an optional configured HTTP(S) URL. Explicit reuse retains the current page and never launches a replacement process.
 - **Broker:** A persistent process owns a registry of browser sessions, each with independent CDP observation and dialog state. Only explicit `launch_chrome` starts the service on demand or establishes/re-establishes observation. All sessions share a durable monotonic dialog sequence.
 - **Adapter:** A stdio MCP server delegates to the authenticated local IPC broker. Adapter initialisation/exit does not start/close Chrome. Multiple adapters can use the service; browser sessions are separate unless their capability token is deliberately shared.
 
@@ -113,6 +113,6 @@ Explicitly closes only that session's Chrome instance and revokes its token on s
 
 ## Tool guidance and validation
 
-Server instructions and tool descriptions contain the supported sequence, manual startup navigation, independent provenance/authorisation checks, single-use reads, and the requirement to stop handling and inform the user after capture failure. A failed count cannot be bypassed through a latest-dialog lookup; that operation is removed.
+Server instructions and tool descriptions contain the supported sequence, direct startup connection with manual navigation as a fallback, independent provenance/authorisation checks, single-use reads, and the requirement to stop handling and inform the user after capture failure. A failed count cannot be bypassed through a latest-dialog lookup; that operation is removed.
 
 Tests cover isolated browser sessions, cross-session identifiers/counts, token validation/revocation/restart, zero/one/multiple openings, closed and identical replacement dialogs, separate capture/response IDs, guessed IDs, replay, target/session changes, connection loss, explicit reconnect, two adapters, IPC authentication, process identity and scoped close. Installed-Chrome integration uses two distinct processes/profiles and a separate test driver to simulate human replacement; it verifies no broker response command is sent on count failure. Manual Computer Use validation of the capture flow and blind user intervention is recorded separately from automated integration.
