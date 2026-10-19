@@ -1,6 +1,6 @@
 {
   "name": "chrome-dialog-mcp",
-  "version": "0.2.0-rc.5",
+  "version": "0.2.0-rc.6",
   "private": true,
   "type": "module",
   "description": "Connection-scoped Chrome JavaScript dialog provenance for MCP",
