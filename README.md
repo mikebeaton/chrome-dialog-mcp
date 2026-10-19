@@ -4,7 +4,7 @@ Chrome's native dialogs interrupt Computer Use. Chrome Dialog MCP lets Codex che
 
 Using it, agents working via Computer Use can handle expected JavaScript dialogs without any user intervention. This includes OK/Cancel confirmations and prompts for text. The Chrome-supplied originating web address, dialog type and message are available for the agent to check and respond to.
 
-Unexpected dialogs still stop Computer Use because examining the screen when a native dialog is present stops Computer Use. This MCP can't stop all possible native dialog interruptions, but it allows a safe workaround for repeated, known interruptions.
+Computer Use stops if it examines the screen while a native dialog is open. This MCP lets the agent handle expected dialogs before that happens, but unexpected dialogs still cause interruptions.
 
 ## Security
 
