@@ -2,7 +2,7 @@
 
 ## Package
 
-The only release download is `chrome-dialog-mcp-<version>.tgz`, containing runtime source, the startup page, documentation and dependency shrinkwrap. Users install it with their existing Node.js 24+ and npm, then register the stdio MCP in Codex; see [installation](README.md#install).
+The only release download is `chrome-dialog-mcp-<version>.tgz`, containing runtime source, the startup page, documentation, 0BSD license and dependency shrinkwrap. Users install it with their existing Node.js 24+ and npm, then register the stdio MCP in Codex; see [installation](README.md#install).
 
 Node and dependencies are not bundled: doing so would make the release far bigger and much harder to audit. npm installs the locked runtime dependencies on the user's machine.
 

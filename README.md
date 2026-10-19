@@ -68,4 +68,4 @@ Each agent launches a separate Chrome process and profile, keeping its browser s
 
 Chrome stays open between tasks. You can ask Codex to close its MCP managed browser when you have finished.
 
-[Technical details](chrome-dialog-mcp-spec.md) · [Development](DEVELOPMENT.md) · [Releases](RELEASES.md)
+[Technical details](chrome-dialog-mcp-spec.md) · [Development](DEVELOPMENT.md) · [Releases](RELEASES.md) · [0BSD license](LICENSE)

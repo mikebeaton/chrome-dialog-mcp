@@ -30,8 +30,9 @@ const packageRoot = path.join(installDir, 'node_modules', pkg.name);
 const installed = JSON.parse(await readFile(path.join(packageRoot, 'package.json'), 'utf8'));
 assert.equal(installed.name, pkg.name);
 assert.equal(installed.version, pkg.version);
+assert.equal(installed.license, '0BSD');
 // Verify the installed runtime is the source that was checked before packaging.
-for (const file of ['package.json', 'npm-shrinkwrap.json', 'assets/start.html', 'src/adapter.js',
+for (const file of ['package.json', 'npm-shrinkwrap.json', 'LICENSE', 'assets/start.html', 'src/adapter.js',
   'src/broker.js', 'src/cdp.js', 'src/chrome.js', 'src/dialogs.js', 'src/ipc.js']) {
   assert.deepEqual(await readFile(path.join(packageRoot, file)), await readFile(path.join(root, file)), file);
 }

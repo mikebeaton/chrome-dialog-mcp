@@ -22,7 +22,7 @@ try { await access(path.join(output, filename)); throw new Error('Artifact alrea
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 const { stdout } = await execute(process.execPath, [process.env.npm_execpath, 'pack', '--json', '--ignore-scripts', '--pack-destination', output], { cwd: root, windowsHide: true });
 const [packed] = JSON.parse(stdout);
-const expected = new Set(['package.json', 'npm-shrinkwrap.json', 'README.md', 'DEVELOPMENT.md', 'RELEASES.md', 'chrome-dialog-mcp-spec.md', 'assets/start.html',
+const expected = new Set(['package.json', 'npm-shrinkwrap.json', 'LICENSE', 'README.md', 'DEVELOPMENT.md', 'RELEASES.md', 'chrome-dialog-mcp-spec.md', 'assets/start.html',
   'src/adapter.js', 'src/broker.js', 'src/cdp.js', 'src/chrome.js', 'src/dialogs.js', 'src/ipc.js']);
 if (packed.filename !== filename || packed.files.length !== expected.size || packed.files.some(file => !expected.has(file.path))) throw new Error('Unexpected release contents');
 const sha256 = createHash('sha256').update(await readFile(path.join(output, filename))).digest('hex');
