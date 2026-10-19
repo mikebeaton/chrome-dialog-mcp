@@ -61,6 +61,68 @@ test('guessing an observed sequence ID cannot bypass a successful capture', asyn
   assert.deepEqual(dialogs.getCaptured('unknown'), { status: 'invalid_capture' });
 });
 
+for (const text of ['Renamed target', '', 'Name "quoted" — 日本語']) {
+  test(`a captured prompt submits the exact explicit string ${JSON.stringify(text)} once`, async () => {
+    const dialogs = fixture();
+    const token = arm(dialogs);
+    dialogs.opening('session-a', { ...event('Rename target'), type: 'prompt', defaultPrompt: 'Original target' });
+    const captured = dialogs.getCaptured(token);
+    assert.equal(captured.default_prompt, 'Original target');
+    const calls = [];
+    const send = async (...args) => calls.push(args);
+    assert.equal((await dialogs.respond(captured.dialog_id, 'accept', send, text)).status, 'responded');
+    assert.deepEqual(calls, [['Page.handleJavaScriptDialog', { accept: true, promptText: text }, 'session-a']]);
+    assert.equal((await dialogs.respond(captured.dialog_id, 'accept', noSend, text)).status, 'stale_dialog');
+  });
+}
+
+test('prompt acceptance requires text; dismissal forbids it and does not submit a value', async () => {
+  const dialogs = fixture();
+  const token = arm(dialogs);
+  dialogs.opening('session-a', { ...event(), type: 'prompt' });
+  const { dialog_id } = dialogs.getCaptured(token);
+  for (const value of [undefined, null, 7, {}]) {
+    assert.deepEqual(await dialogs.respond(dialog_id, 'accept', noSend, value), { status: 'invalid_request' });
+  }
+  assert.deepEqual(await dialogs.respond(dialog_id, 'dismiss', noSend, 'ignored?'), { status: 'invalid_request' });
+  const calls = [];
+  assert.equal((await dialogs.respond(dialog_id, 'dismiss', async (...args) => calls.push(args))).status, 'responded');
+  assert.deepEqual(calls, [['Page.handleJavaScriptDialog', { accept: false }, 'session-a']]);
+});
+
+test('prompt text is refused for a confirm without consuming its valid response ID', async () => {
+  const dialogs = fixture();
+  const token = arm(dialogs);
+  dialogs.opening('session-a', { ...event(), defaultPrompt: 'Must not be returned for a confirm' });
+  const captured = dialogs.getCaptured(token);
+  assert.equal('default_prompt' in captured, false);
+  for (const action of ['accept', 'dismiss']) {
+    assert.deepEqual(await dialogs.respond(captured.dialog_id, action, noSend, ''), { status: 'invalid_request' });
+  }
+  assert.equal((await dialogs.respond(captured.dialog_id, 'accept', async () => {})).status, 'responded');
+});
+
+test('prompt text cannot bypass capture counts, guessed IDs, replacement or connection loss', async () => {
+  const dialogs = fixture();
+  const prompt = { ...event('Rename target'), type: 'prompt' };
+  const token = arm(dialogs);
+  dialogs.opening('session-a', prompt);
+  assert.deepEqual(await dialogs.respond(1, 'accept', noSend, 'Renamed target'), { status: 'dialog_not_captured' });
+  dialogs.closed('session-a');
+  dialogs.opening('session-a', prompt);
+  assert.deepEqual(dialogs.getCaptured(token), { status: 'incorrect_dialog_count', expected_count: 1, observed_count: 2 });
+  assert.deepEqual(await dialogs.respond(2, 'accept', noSend, 'Renamed target'), { status: 'dialog_not_captured' });
+  dialogs.closed('session-a');
+  const fresh = arm(dialogs);
+  dialogs.opening('session-a', prompt);
+  const captured = dialogs.getCaptured(fresh);
+  dialogs.closed('session-a');
+  dialogs.opening('session-a', prompt);
+  assert.deepEqual(await dialogs.respond(captured.dialog_id, 'accept', noSend, 'Renamed target'), { status: 'stale_dialog' });
+  dialogs.disconnect();
+  assert.deepEqual(await dialogs.respond(4, 'accept', noSend, 'Renamed target'), { status: 'not_connected' });
+});
+
 test('replacement before inspection counts both openings even with identical provenance and text', async () => {
   const dialogs = fixture();
   const token = arm(dialogs);

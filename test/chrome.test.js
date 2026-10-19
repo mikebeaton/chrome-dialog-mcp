@@ -34,3 +34,13 @@ test('PID reuse, changed executable and wrong profile fail identity verification
   chrome.inspect = async () => null;
   assert.equal(await chrome.identity(), null);
 });
+
+test('explicit reuse of a missing Chrome cannot launch a replacement process', async t => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'dialog-no-replacement-test-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const chrome = new Chrome(directory);
+  chrome.inspect = async () => ({});
+  chrome.identity = async () => null;
+  chrome.executable = async () => { assert.fail('Reuse must not try to launch Chrome'); };
+  await assert.rejects(chrome.ensure({ launchIfMissing: false }), /no longer running/);
+});

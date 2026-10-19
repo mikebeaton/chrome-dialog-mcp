@@ -7,8 +7,8 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 
-// Old brokers cannot enforce capture eligibility; never authenticate one as this service.
-const SERVICE = 'chrome-dialog-broker/v2';
+// Earlier brokers lack session isolation (v3), prompt semantics (v2) or capture eligibility (v1).
+const SERVICE = 'chrome-dialog-broker/v4';
 const MAX_MESSAGE = 1024 * 1024;
 
 export function configuration() {
@@ -123,7 +123,7 @@ export class BrokerClient {
     try { return await request(this.config, method, params); }
     catch (error) {
       if (!['ENOENT', 'ECONNREFUSED'].includes(error.code)) return { status: 'broker_unavailable' };
-      if (method !== 'launch_chrome') return { status: method === 'close_chrome' ? 'not_running' : 'not_connected' };
+      if (method !== 'launch_chrome') return { status: 'not_connected' };
     }
     // Pipe bind elects the single broker; simultaneous launchers may spawn losing candidates.
     const child = this.spawnProcess(process.execPath, [fileURLToPath(new URL('./broker.js', import.meta.url))], {

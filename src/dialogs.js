@@ -53,6 +53,7 @@ export class Dialogs {
       connection: this.connection, session, target: this.sessions.get(session),
       dialog_id: this.allocateId(), url: event.url,
       type: event.type, message: event.message, options: ['accept', 'dismiss'],
+      ...(event.type === 'prompt' && typeof event.defaultPrompt === 'string' ? { default_prompt: event.defaultPrompt } : {}),
       responseEnabled: false,
     };
     this.pending.set(session, record);
@@ -94,25 +95,32 @@ export class Dialogs {
     if (!record || this.pending.get(record.session) !== record ||
         this.sessions.get(record.session) !== record.target) return { status: 'dialog_not_pending' };
     record.responseEnabled = true;
-    const { dialog_id, url, type, message, options } = record;
-    return { status: 'captured', dialog_id, url, type, message, options: [...options] };
+    const { dialog_id, url, type, message, options, default_prompt } = record;
+    return { status: 'captured', dialog_id, url, type, message, options: [...options],
+      ...(default_prompt !== undefined ? { default_prompt } : {}) };
   }
 
-  async respond(id, action, send) {
+  async respond(id, action, send, promptText) {
     if (!this.connection) return { status: 'not_connected' };
-    if (!Number.isSafeInteger(id) || !['accept', 'dismiss'].includes(action)) {
+    if (!Number.isSafeInteger(id) || !['accept', 'dismiss'].includes(action) ||
+        (promptText !== undefined && typeof promptText !== 'string')) {
       return { status: 'invalid_request' };
     }
     const record = [...this.pending.values()].find(d => d.dialog_id === id);
     if (!record || record.connection !== this.connection ||
         this.sessions.get(record.session) !== record.target) return { status: 'stale_dialog' };
     if (!record.responseEnabled) return { status: 'dialog_not_captured' };
+    const acceptsPrompt = record.type === 'prompt' && action === 'accept';
+    // Require an explicit value (including an intentional empty string) for prompt acceptance.
+    // Never silently ignore text supplied for a confirmation or cancellation.
+    if (acceptsPrompt ? promptText === undefined : promptText !== undefined) return { status: 'invalid_request' };
     if (this.responding) return { status: 'busy' };
     // Consume before sending. A timeout or error can never make this ID reusable.
     this.pending.delete(record.session);
     this.responding = true;
     try {
-      await send('Page.handleJavaScriptDialog', { accept: action === 'accept' }, record.session);
+      await send('Page.handleJavaScriptDialog', { accept: action === 'accept',
+        ...(acceptsPrompt ? { promptText } : {}) }, record.session);
       return record.connection === this.connection
         ? { status: 'responded', dialog_id: id, action }
         : { status: 'not_connected' };

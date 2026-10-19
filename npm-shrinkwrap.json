@@ -1,12 +1,15 @@
 {
   "name": "chrome-dialog-mcp",
-  "version": "0.2.0",
+  "version": "0.2.0-rc.5",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "chrome-dialog-mcp",
-      "version": "0.2.0",
+      "version": "0.2.0-rc.5",
+      "os": [
+        "win32"
+      ],
       "dependencies": {
         "@modelcontextprotocol/sdk": "^1.32.1",
         "zod": "^4.1.0"

@@ -39,7 +39,7 @@ test('absent broker is not started by inspection, response or close', async t =>
   assert.deepEqual(await client.call('start_dialog_capture'), { status: 'not_connected' });
   assert.deepEqual(await client.call('get_captured_dialog', { capture_id: randomUUID() }), { status: 'not_connected' });
   assert.deepEqual(await client.call('respond_to_dialog', { dialog_id: 1, action: 'accept' }), { status: 'not_connected' });
-  assert.deepEqual(await client.call('close_chrome'), { status: 'not_running' });
+  assert.deepEqual(await client.call('close_chrome'), { status: 'not_connected' });
   await assert.rejects(readFile(path.join(config.stateDir, 'ipc.key')), { code: 'ENOENT' });
 });
 
@@ -68,8 +68,8 @@ test('the IPC endpoint admits only one broker and startup does not connect to Ch
   const { server, broker } = await startBroker(config);
   t.after(() => new Promise(resolve => server.close(resolve)));
   await assert.rejects(startBroker(config), { code: 'EADDRINUSE' });
-  assert.equal(broker.observer, null);
-  assert.deepEqual(await request(config, 'get_dialog_status'), { status: 'not_connected' });
+  assert.equal(broker.sessions.size, 0);
+  assert.deepEqual(await request(config, 'get_dialog_status'), { status: 'invalid_browser_token' });
   await assert.rejects(readFile(path.join(config.stateDir, 'chrome.json')), { code: 'ENOENT' });
 });
 
@@ -101,18 +101,19 @@ test('concurrent launchers start one persistent broker process on demand', { tim
   assert.deepEqual(await a.call('get_dialog_status'), { status: 'not_connected' });
   assert.equal(children.length, 0);
   const results = await Promise.all([a.call('launch_chrome'), b.call('launch_chrome')]);
-  assert.deepEqual(results, [{ status: 'launch_failed' }, { status: 'launch_failed' }]);
+  assert.deepEqual(results.map(result => result.status), ['launch_failed', 'launch_failed']);
+  assert.notEqual(results[0].browser_token, results[1].browser_token);
   assert.ok(children.length >= 1);
-  assert.deepEqual(await new BrokerClient(config).call('get_dialog_status'), { status: 'not_connected' });
-  assert.deepEqual(await a.call('close_chrome'), { status: 'not_running' });
+  assert.deepEqual(await new BrokerClient(config).call('get_dialog_status', { browser_token: results[0].browser_token }), { status: 'not_connected' });
+  assert.deepEqual(await a.call('close_chrome', { browser_token: results[0].browser_token }), { status: 'not_running' });
   // Explicit browser close leaves the persistent service running.
-  assert.deepEqual(await request(config, 'get_dialog_status'), { status: 'not_connected' });
+  assert.deepEqual(await request(config, 'get_dialog_status', { browser_token: results[1].browser_token }), { status: 'not_connected' });
 });
 
-test('the capture adapter refuses a legacy broker rather than using its unsafe response flow', async t => {
+for (const legacyVersion of ['v1', 'v2', 'v3']) test(`the adapter refuses a legacy ${legacyVersion} broker rather than ignoring required safeguards`, async t => {
   const config = await fixture(t);
   const challenge = 'a'.repeat(64);
-  const server = net.createServer(socket => socket.end(JSON.stringify({ service: 'chrome-dialog-broker/v1', challenge }) + '\n'));
+  const server = net.createServer(socket => socket.end(JSON.stringify({ service: `chrome-dialog-broker/${legacyVersion}`, challenge }) + '\n'));
   await new Promise(resolve => server.listen(config.endpoint, resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   assert.deepEqual(await new BrokerClient(config).call('launch_chrome'), { status: 'broker_unavailable' });

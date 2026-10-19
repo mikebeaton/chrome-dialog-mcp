@@ -1,0 +1,64 @@
+name: Build and release
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm test
+      - run: npm run release:pack
+      - run: npm run release:verify
+      - name: Test the installed package against Chrome
+        run: node --test test/integration.test.js
+        env:
+          CHROME_DIALOG_INTEGRATION: '1'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: chrome-dialog-mcp-${{ github.sha }}
+          path: |
+            dist/*.tgz
+            dist/*.tgz.sha256
+            dist/*-build-info.json
+          if-no-files-found: error
+
+  draft-release:
+    needs: verify
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: chrome-dialog-mcp-${{ github.sha }}
+          path: dist
+      - name: Draft release with the tested artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum --check ./*.sha256
+          options=(--verify-tag --draft --title "$RELEASE_TAG" --generate-notes)
+          if [[ "$RELEASE_TAG" == *-* ]]; then options+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" ./*.tgz ./*.tgz.sha256 ./*-build-info.json "${options[@]}"

@@ -71,13 +71,14 @@ export class Chrome {
     throw new Error('Chrome executable unavailable');
   }
 
-  async ensure() {
+  async ensure({ launchIfMissing = true } = {}) {
     if (process.platform !== 'win32') throw new Error('Windows required');
     // Confirm identity queries are permitted before starting a browser we could not track.
     await this.inspect(process.pid);
     await mkdir(this.profile, { recursive: true, mode: 0o700 });
     let actual = await this.identity();
     if (!actual) {
+      if (!launchIfMissing) throw new Error('Managed Chrome no longer running');
       const configuredUrl = process.env.CHROME_DIALOG_START_URL;
       const startUrl = configuredUrl === undefined
         ? new URL('../assets/start.html', import.meta.url) : new URL(configuredUrl);
