@@ -2,9 +2,21 @@
 
 Chrome's native dialogs interrupt Computer Use. Chrome Dialog MCP lets Codex check where a dialog came from and respond according to your instructions.
 
-Using it, agents working via Computer Use can handle expected JavaScript dialogs without any intervention. This includes OK/Cancel confirmations and prompts for text. The Chrome-supplied originating web address, dialog type and message are available for the agent to check and respond to.
+Using it, agents working via Computer Use can handle expected JavaScript dialogs without any user intervention. This includes OK/Cancel confirmations and prompts for text. The Chrome-supplied originating web address, dialog type and message are available for the agent to check and respond to.
 
-Unexpected dialogs still stop Computer Use because examining the screen when a native dialog is present stops Computer Use. So this MCP can't stop all possible native dialog interruptions, but it allows a safe workaround for repeated, known interruptions.
+Unexpected dialogs still stop Computer Use because examining the screen when a native dialog is present stops Computer Use. This MCP can't stop all possible native dialog interruptions, but it allows a safe workaround for repeated, known interruptions.
+
+## Security
+
+Using this MCP moves the decision to handle a native dialog from Computer Use to Codex. You are trusting Codex to check the source and choose a response that follows your instructions.
+
+Before the expected action, the agent starts a capture using this MCP to record any dialogs that open. The MCP checks that:
+
+- Exactly one dialog opened during the capture.
+- That same dialog is still open.
+- Permission to respond applies to that same dialog and is used once.
+
+Each browser session has its own dialog records and response permissions.
 
 ## Requirements
 
@@ -39,9 +51,8 @@ args = ["C:/Tools/chrome-dialog-mcp/0.2.0-rc.7/node_modules/chrome-dialog-mcp/sr
 tool_timeout_sec = 60
 ```
 
-`command` and `args` tell Codex how to start the installed MCP. Adjust the path in `args` if you chose another installation folder, using forward slashes as shown.
+Adjust the path in `args` if you chose another installation folder.
 
-Chrome profiles and connection credentials are stored under your Windows account, in a separate folder for each version. Upgrades automatically start a fresh broker and browser sessions.
 
 Save the file and restart Codex. Codex starts the MCP automatically.
 
@@ -55,18 +66,6 @@ Choose a website yourself and manually type its address into the new window's ad
 
 Each agent launches a separate Chrome process and profile, keeping its browser state separate when you switch between chats.
 
-Chrome stays open between tasks. Ask Codex to close its browser when you have finished.
-
-## Security
-
-Using this MCP moves the decision to handle a native dialog from Computer Use to Codex. You are trusting Codex to check the source and choose a response that follows your instructions.
-
-Before the expected action, the agent starts a capture to record any dialogs that open. The MCP checks that:
-
-- Exactly one dialog opened during the capture.
-- That same dialog is still open.
-- Permission to respond applies to that same dialog and is used once.
-
-Each browser session has its own dialog records and response permissions.
+Chrome stays open between tasks. You can ask Codex to close its MCP managed browser when you have finished.
 
 [Technical details](chrome-dialog-mcp-spec.md) · [Development](DEVELOPMENT.md) · [Releases](RELEASES.md)
