@@ -1,0 +1,18 @@
+{
+  "name": "chrome-dialog-mcp",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Connection-scoped Chrome JavaScript dialog provenance for MCP",
+  "engines": { "node": ">=24" },
+  "bin": { "chrome-dialog-mcp": "src/adapter.js" },
+  "scripts": {
+    "start": "node src/adapter.js",
+    "test": "node --test",
+    "check": "node --check src/adapter.js && node --check src/broker.js && node --check src/chrome.js && node --check src/cdp.js && node --check src/dialogs.js && node --check src/ipc.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^4.1.0"
+  }
+}

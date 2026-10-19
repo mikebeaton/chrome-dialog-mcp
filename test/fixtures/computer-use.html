@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Chrome Dialog MCP — Computer Use validation</title>
+<style>
+  body { font: 20px system-ui, sans-serif; max-width: 760px; margin: 72px auto; padding: 0 24px; }
+  button { font: inherit; padding: 14px 24px; cursor: pointer; }
+  output { display: block; margin-top: 32px; font-weight: 600; }
+</style>
+<h1>Chrome Dialog MCP validation</h1>
+<p>This local test only records a confirm dialog's return value. It changes no files or accounts.</p>
+<button id="confirm">Open test confirm</button>
+<output id="result" aria-live="polite">No response recorded.</output>
+<script>
+  let count = 0;
+  document.getElementById('confirm').addEventListener('click', () => {
+    const number = ++count;
+    const accepted = confirm(`Computer Use validation ${number}: accept this harmless test dialog?`);
+    document.getElementById('result').textContent = `Test ${number}: ${accepted ? 'accepted (true)' : 'dismissed (false)'}.`;
+  });
+</script>
+</html>
