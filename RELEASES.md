@@ -12,6 +12,8 @@ Use SemVer for the MCP contract and observable broker behaviour. Continue prerel
 
 Tags are `v<package version>`. Never move a published tag or replace an existing version's artifact. `package.json` supplies the MCP version and must match both root version fields in `npm-shrinkwrap.json`; internal IPC compatibility is versioned separately.
 
+The runtime appends this package version to its state base folder automatically. Each new release gets separate broker credentials, browser profiles and session metadata without a Codex environment setting. Reinstalling the same version reuses that version's state; source changes need a version bump to isolate them from an already-running broker.
+
 ## Build and verify
 
 Use Windows, Node.js 24+ and Chrome for the full validation. From the repository root:
@@ -22,7 +24,7 @@ npm run check
 npm test
 npm run release:pack
 npm run release:verify
-$env:CHROME_DIALOG_PACKAGE_ROOT = "$PWD/.work/release-verify/0.2.0-rc.6 installed package/node_modules/chrome-dialog-mcp"
+$env:CHROME_DIALOG_PACKAGE_ROOT = "$PWD/.work/release-verify/0.2.0-rc.7 installed package/node_modules/chrome-dialog-mcp"
 $env:CHROME_DIALOG_INTEGRATION = '1'
 node --test test/integration.test.js
 ```
@@ -40,9 +42,9 @@ Existing artifacts and verification directories are not overwritten. Use a new v
 For example, after updating and committing the package/shrinkwrap version:
 
 ```powershell
-git tag -a v0.2.0-rc.6 -m "Chrome Dialog MCP 0.2.0-rc.6"
+git tag -a v0.2.0-rc.7 -m "Chrome Dialog MCP 0.2.0-rc.7"
 git push origin HEAD
-git push origin v0.2.0-rc.6
+git push origin v0.2.0-rc.7
 ```
 
 Protect release tags and the main branch in GitHub. A manual workflow run produces downloadable artifacts without creating a release.

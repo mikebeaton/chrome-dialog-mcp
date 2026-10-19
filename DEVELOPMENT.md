@@ -10,7 +10,7 @@ Only **anticipated dialogs** are supported. The agent arms a capture before the 
 
 The [README installation guide](README.md#install) covers the `.tgz`, choosing a persistent directory and registering the installed adapter in Codex. Requires Windows, Chrome and Node.js 24+. The package includes a dependency shrinkwrap; npm installs the locked runtime dependencies.
 
-Protocol v4 refuses rc.1–rc.4 brokers that lack session isolation. Upgrade using a fresh state directory; existing singleton browsers are not adopted. A new state directory starts a separate broker. Changing adapter files alone does not upgrade an already-running service; restart Codex to refresh tool schemas and guidance.
+Each package version automatically uses its own state directory and broker. Upgrades start fresh sessions; older windows remain with their original broker. Restart Codex after updating its adapter path to refresh tool schemas and guidance. Protocol v4 also refuses rc.1–rc.4 brokers that lack session isolation.
 
 ## Workflow
 
@@ -43,9 +43,9 @@ For packaged installations, prerelease trials and GitHub CI, see [Releases](RELE
 | --- | --- |
 | `CHROME_DIALOG_CHROME_PATH` | Optional Chrome executable path. |
 | `CHROME_DIALOG_START_URL` | Optional HTTP(S) startup override; default is the bundled `assets/start.html` file. |
-| `CHROME_DIALOG_STATE_DIR` | Private broker state directory; default `%LOCALAPPDATA%/ChromeDialogMcp`. Adapters using the same directory share a service, with separate browser sessions by default. |
+| `CHROME_DIALOG_STATE_DIR` | Optional private state base folder; default `%LOCALAPPDATA%/ChromeDialogMcp`. The installed package version is always appended, including for custom locations. |
 
-The persistent broker inherits settings when first started. Its state directory contains the IPC authentication key, global dialog sequence and a `sessions/` directory with separate Chrome profiles and session metadata; use a directory private to your Windows account. Session directory names are hashes of the private tokens. Protocol v4 rejects legacy brokers. Upgrade using a fresh state directory rather than reusing an older running service.
+The persistent broker inherits settings when first started. Its version-specific state directory contains the IPC authentication key, dialog sequence and a `sessions/` directory with separate Chrome profiles and session metadata; use a base folder private to your Windows account. Session directory names are hashes of the private tokens. Adapters using the same base folder and package version share a broker, with separate browser sessions by default. For example, version `0.2.0-rc.7` uses `%LOCALAPPDATA%/ChromeDialogMcp/0.2.0-rc.7`; an explicit base folder gets the same version suffix. Older unversioned state is left untouched. Browser tokens belong to their original version's broker and do not transfer across upgrades. Reinstalling the same version uses its existing state.
 
 ## Tools
 

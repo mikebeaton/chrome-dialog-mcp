@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -10,11 +11,13 @@ import { setTimeout as delay } from 'node:timers/promises';
 // Earlier brokers lack session isolation (v3), prompt semantics (v2) or capture eligibility (v1).
 const SERVICE = 'chrome-dialog-broker/v4';
 const MAX_MESSAGE = 1024 * 1024;
+const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
-export function configuration() {
-  const stateDir = path.resolve(process.env.CHROME_DIALOG_STATE_DIR ?? path.join(process.env.LOCALAPPDATA ?? os.homedir(), 'ChromeDialogMcp'));
+export function configuration(env = process.env) {
+  const stateRoot = path.resolve(env.CHROME_DIALOG_STATE_DIR ?? path.join(env.LOCALAPPDATA ?? os.homedir(), 'ChromeDialogMcp'));
+  const stateDir = path.join(stateRoot, version);
   const hash = createHash('sha256').update(stateDir.toLowerCase()).digest('hex').slice(0, 24);
-  return { stateDir, endpoint: process.platform === 'win32' ? `\\\\.\\pipe\\chrome-dialog-mcp-${hash}` : path.join(stateDir, 'broker.sock') };
+  return { stateRoot, stateDir, endpoint: process.platform === 'win32' ? `\\\\.\\pipe\\chrome-dialog-mcp-${hash}` : path.join(stateDir, 'broker.sock') };
 }
 
 export async function secret(stateDir, create = false) {
@@ -128,7 +131,7 @@ export class BrokerClient {
     // Pipe bind elects the single broker; simultaneous launchers may spawn losing candidates.
     const child = this.spawnProcess(process.execPath, [fileURLToPath(new URL('./broker.js', import.meta.url))], {
       detached: true, stdio: 'ignore', windowsHide: true,
-      env: { ...process.env, CHROME_DIALOG_STATE_DIR: this.config.stateDir },
+      env: { ...process.env, CHROME_DIALOG_STATE_DIR: this.config.stateRoot },
     });
     let failed = false;
     child.on('error', () => { failed = true; });

@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { createHash } from 'node:crypto';
 import http from 'node:http';
 import { setTimeout as delay } from 'node:timers/promises';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -15,6 +14,7 @@ const runtimeRoot = process.env.CHROME_DIALOG_PACKAGE_ROOT
   ? pathToFileURL(path.resolve(process.env.CHROME_DIALOG_PACKAGE_ROOT) + path.sep) : new URL('../', import.meta.url);
 const { startBroker } = await import(new URL('src/broker.js', runtimeRoot));
 const { Cdp } = await import(new URL('src/cdp.js', runtimeRoot));
+const { configuration } = await import(new URL('src/ipc.js', runtimeRoot));
 
 async function connectAdapter(stateDir) {
   const client = new Client({ name: 'integration-test', version: '1.0.0' });
@@ -40,7 +40,7 @@ test('installed Chrome: isolated browser sessions, exact counts, two adapters, p
   skip: process.env.CHROME_DIALOG_INTEGRATION !== '1' || process.platform !== 'win32', timeout: 180000,
 }, async t => {
   const stateDir = await mkdtemp(path.join(os.tmpdir(), 'dialog-capture-integration-'));
-  const config = { stateDir, endpoint: `\\\\.\\pipe\\chrome-dialog-mcp-${createHash('sha256').update(stateDir.toLowerCase()).digest('hex').slice(0, 24)}` };
+  const config = configuration({ CHROME_DIALOG_STATE_DIR: stateDir });
   let brokerResponses = 0;
   const { broker, server } = await startBroker(config, { open: async endpoint => {
     const cdp = await Cdp.open(endpoint);

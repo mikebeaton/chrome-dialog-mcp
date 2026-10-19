@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, mkdir, copyFile, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
-import { createIpcServer, request, secret, BrokerClient } from '../src/ipc.js';
+import { createHash, randomUUID } from 'node:crypto';
+import { configuration, createIpcServer, request, secret, BrokerClient } from '../src/ipc.js';
+import { pathToFileURL } from 'node:url';
 import { startBroker } from '../src/broker.js';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -16,6 +17,55 @@ async function fixture(t) {
   t.after(() => rm(stateDir, { recursive: true, force: true }));
   return { stateDir, endpoint };
 }
+
+test('default and custom state roots automatically use the installed package version', async () => {
+  const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const local = path.resolve('local-app-data');
+  const defaultConfig = configuration({ LOCALAPPDATA: local });
+  assert.equal(defaultConfig.stateRoot, path.join(local, 'ChromeDialogMcp'));
+  assert.equal(defaultConfig.stateDir, path.join(local, 'ChromeDialogMcp', version));
+  assert.equal(configuration({}).stateDir, path.join(os.homedir(), 'ChromeDialogMcp', version));
+  const custom = configuration({ CHROME_DIALOG_STATE_DIR: 'custom-state', LOCALAPPDATA: local });
+  assert.equal(custom.stateRoot, path.resolve('custom-state'));
+  assert.equal(custom.stateDir, path.join(custom.stateRoot, version));
+  assert.deepEqual(configuration({ CHROME_DIALOG_STATE_DIR: custom.stateRoot }), custom);
+});
+
+test('different installed versions use separate files and brokers, leaving legacy state untouched', async t => {
+  const { stateDir: root } = await fixture(t);
+  const stateRoot = path.join(root, 'shared-state');
+  const configurations = [];
+  for (const version of ['0.2.0-rc.1', '0.2.0-rc.2']) {
+    const packageDir = path.join(root, version);
+    await mkdir(path.join(packageDir, 'src'), { recursive: true });
+    await writeFile(path.join(packageDir, 'package.json'), JSON.stringify({ type: 'module', version }));
+    await copyFile(new URL('../src/ipc.js', import.meta.url), path.join(packageDir, 'src', 'ipc.js'));
+    const { configuration: installedConfiguration } = await import(pathToFileURL(path.join(packageDir, 'src', 'ipc.js')));
+    const config = installedConfiguration({ CHROME_DIALOG_STATE_DIR: stateRoot });
+    assert.equal(config.stateDir, path.join(stateRoot, version));
+    configurations.push(config);
+  }
+  const hash = createHash('sha256').update(stateRoot.toLowerCase()).digest('hex').slice(0, 24);
+  const legacy = { stateDir: stateRoot, endpoint: process.platform === 'win32'
+    ? `\\\\.\\pipe\\chrome-dialog-mcp-${hash}` : path.join(stateRoot, 'broker.sock') };
+  const configs = [legacy, ...configurations];
+  assert.equal(new Set(configs.map(config => config.endpoint)).size, 3);
+  const keys = [];
+  const calls = [];
+  for (const [index, config] of configs.entries()) {
+    const key = await secret(config.stateDir, true);
+    keys.push(key);
+    const server = createIpcServer(key, () => { calls.push(index); return { status: `broker-${index}` }; });
+    await new Promise(resolve => server.listen(config.endpoint, resolve));
+    t.after(() => new Promise(resolve => server.close(resolve)));
+  }
+  assert.equal(new Set(keys).size, 3);
+  for (const [index, config] of configurations.entries()) {
+    assert.deepEqual(await new BrokerClient(config).call('get_dialog_status'), { status: `broker-${index + 1}` });
+  }
+  assert.deepEqual(calls, [1, 2]);
+  assert.equal(await readFile(path.join(stateRoot, 'ipc.key'), 'utf8'), keys[0]);
+});
 
 test('two independent adapters reuse an authenticated broker', async t => {
   const config = await fixture(t);
@@ -74,12 +124,8 @@ test('the IPC endpoint admits only one broker and startup does not connect to Ch
 });
 
 test('concurrent launchers start one persistent broker process on demand', { timeout: 30000 }, async t => {
-  const config = await fixture(t);
-  // Use the same endpoint derivation as the adapter/broker CLI.
-  const { createHash } = await import('node:crypto');
-  config.endpoint = process.platform === 'win32'
-    ? `\\\\.\\pipe\\chrome-dialog-mcp-${createHash('sha256').update(config.stateDir.toLowerCase()).digest('hex').slice(0, 24)}`
-    : path.join(config.stateDir, 'broker.sock');
+  const { stateDir: stateRoot } = await fixture(t);
+  const config = configuration({ CHROME_DIALOG_STATE_DIR: stateRoot });
   const children = [];
   const start = (command, args, options) => {
     // Launch cannot open Chrome, even when the suite runs outside the sandbox.

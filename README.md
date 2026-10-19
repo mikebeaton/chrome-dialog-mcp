@@ -14,17 +14,17 @@ Check your Node version with `node --version` in PowerShell.
 
 ## Install
 
-Download `chrome-dialog-mcp-0.2.0-rc.6.tgz` from [GitHub Releases](https://github.com/mikebeaton/chrome-dialog-mcp/releases). The download can stay in any convenient folder; the install command chooses where the program will live.
+Download `chrome-dialog-mcp-0.2.0-rc.7.tgz` from [GitHub Releases](https://github.com/mikebeaton/chrome-dialog-mcp/releases). The download can stay in any convenient folder; the install command chooses where the program will live.
 
 Open PowerShell in the folder containing the download and run:
 
 ```powershell
-npm install --prefix C:/Tools/chrome-dialog-mcp/0.2.0-rc.6 --ignore-scripts --omit=dev ./chrome-dialog-mcp-0.2.0-rc.6.tgz
+npm install --prefix C:/Tools/chrome-dialog-mcp/0.2.0-rc.7 --ignore-scripts --omit=dev ./chrome-dialog-mcp-0.2.0-rc.7.tgz
 ```
 
-npm extracts the package and installs the libraries it needs. The `--prefix` option selects the installation folder: `C:\Tools\chrome-dialog-mcp\0.2.0-rc.6` in this example. Keep that folder while the MCP is configured.
+npm extracts the package and installs the libraries it needs. The `--prefix` option selects the installation folder: `C:\Tools\chrome-dialog-mcp\0.2.0-rc.7` in this example. Keep that folder while the MCP is configured.
 
-For an installation under your own Windows account, use a path such as `C:/Users/YOUR_NAME/Tools/chrome-dialog-mcp/0.2.0-rc.6` after `--prefix`. Replace `YOUR_NAME` with your Windows user-folder name.
+For an installation under your own Windows account, use a path such as `C:/Users/YOUR_NAME/Tools/chrome-dialog-mcp/0.2.0-rc.7` after `--prefix`. Replace `YOUR_NAME` with your Windows user-folder name.
 
 ## Configure Codex
 
@@ -35,16 +35,13 @@ Add the following settings to the file. If a `chrome_dialog` entry already exist
 ```toml
 [mcp_servers.chrome_dialog]
 command = "node"
-args = ["C:/Tools/chrome-dialog-mcp/0.2.0-rc.6/node_modules/chrome-dialog-mcp/src/adapter.js"]
+args = ["C:/Tools/chrome-dialog-mcp/0.2.0-rc.7/node_modules/chrome-dialog-mcp/src/adapter.js"]
 tool_timeout_sec = 60
-
-[mcp_servers.chrome_dialog.env]
-CHROME_DIALOG_STATE_DIR = "C:/Users/YOUR_NAME/AppData/Local/ChromeDialogMcp/0.2.0-rc.6"
 ```
 
-`command` and `args` tell Codex how to start the installed MCP. `CHROME_DIALOG_STATE_DIR` selects a private folder for its Chrome profiles and connection credentials.
+`command` and `args` tell Codex how to start the installed MCP. Adjust the path in `args` if you chose another installation folder, using forward slashes as shown.
 
-Replace `YOUR_NAME` with your Windows user-folder name. Adjust the path in `args` if you chose another installation folder, using forward slashes as shown.
+Chrome profiles and connection credentials are stored under your Windows account, in a separate folder for each version. Upgrades automatically start a fresh broker and browser sessions.
 
 Save the file and restart Codex. Codex starts the MCP automatically.
 
