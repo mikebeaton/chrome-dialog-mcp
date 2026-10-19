@@ -30,18 +30,20 @@ export function validateEndpoint(text) {
 }
 
 export class Chrome {
-  constructor(stateDir) {
+  constructor(stateDir, { run = execute } = {}) {
     this.stateDir = stateDir;
     this.profile = path.join(stateDir, 'chrome-profile');
     this.metadataFile = path.join(stateDir, 'chrome.json');
     this.activePort = path.join(this.profile, 'DevToolsActivePort');
+    this.run = run;
   }
 
   async inspect(pid) {
     if (process.platform !== 'win32') throw new Error('Windows required');
     if (!Number.isSafeInteger(pid) || pid <= 0) throw new Error('Invalid PID');
-    const script = `$ErrorActionPreference='Stop'; $p=Get-CimInstance Win32_Process -Filter 'ProcessId = ${pid}'; if ($null -ne $p) { $w=Get-Process -Id ${pid}; @{pid=[int]$p.ProcessId; created=$p.CreationDate.ToUniversalTime().ToString('o'); executable=$p.ExecutablePath; commandLine=$p.CommandLine; session=[int]$p.SessionId; hwnd=$w.MainWindowHandle.ToInt64().ToString('X')} | ConvertTo-Json -Compress }`;
-    const { stdout } = await execute('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, timeout: 10000 });
+    // CIM supplies identity. The window handle is optional and can disappear during exit.
+    const script = `$ErrorActionPreference='Stop'; $p=Get-CimInstance Win32_Process -Filter 'ProcessId = ${pid}'; if ($null -ne $p) { $hwnd=$null; try { $w=Get-Process -Id ${pid} -ErrorAction Stop; $hwnd=$w.MainWindowHandle.ToInt64().ToString('X') } catch {} @{pid=[int]$p.ProcessId; created=$p.CreationDate.ToUniversalTime().ToString('o'); executable=$p.ExecutablePath; commandLine=$p.CommandLine; session=[int]$p.SessionId; hwnd=$hwnd} | ConvertTo-Json -Compress }`;
+    const { stdout } = await this.run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true, timeout: 10000 });
     return stdout.trim() ? JSON.parse(stdout) : null;
   }
 
@@ -124,7 +126,15 @@ export class Chrome {
     const actual = await this.identity();
     if (!actual) return { status: 'not_running' };
     // Explicit close only. PID plus creation time and dedicated profile were verified above.
-    await execute('taskkill.exe', ['/PID', String(actual.pid), '/T', '/F'], { windowsHide: true, timeout: 10000 });
+    try {
+      await this.run('taskkill.exe', ['/PID', String(actual.pid), '/T', '/F'], { windowsHide: true, timeout: 10000 });
+    } catch (error) {
+      // Chrome can exit after identity verification but before taskkill sees it.
+      // Only a fresh, successful identity query may establish that it is gone.
+      if (!await this.identity()) return { status: 'closed' };
+      throw error;
+    }
+    if (!await this.waitForExit()) throw new Error('Managed Chrome did not exit');
     return { status: 'closed' };
   }
 

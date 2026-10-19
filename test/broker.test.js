@@ -134,6 +134,35 @@ test('the old lookup is unavailable and a failed capture cannot authorise its re
   assert.deepEqual(await broker.call('get_dialog_status'), { status: 'dialog_pending', pending_count: 1 });
 });
 
+test('a graceful shutdown inspection error uses the verified close fallback', async () => {
+  let closes = 0;
+  const dialogs = new Dialogs(() => 1);
+  const chrome = {
+    async ensure() { return { endpoint: 'private', identifiers: { status: 'ready' } }; },
+    async waitForExit() { throw new Error('Inspection unavailable'); },
+    async close() {
+      closes++;
+      assert.deepEqual(dialogs.status(), { status: 'not_connected' });
+      return { status: 'closed' };
+    },
+  };
+  const broker = new Broker(chrome, dialogs, async () => new FakeCdp());
+  await broker.call('launch_chrome');
+  assert.deepEqual(await broker.call('close_chrome'), { status: 'closed' });
+  assert.equal(closes, 1);
+});
+
+test('graceful close succeeds if Chrome exits before the verified fallback', async () => {
+  const chrome = {
+    async ensure() { return { endpoint: 'private', identifiers: { status: 'ready' } }; },
+    async waitForExit() { return false; },
+    async close() { return { status: 'not_running' }; },
+  };
+  const broker = new Broker(chrome, new Dialogs(() => 1), async () => new FakeCdp());
+  await broker.call('launch_chrome');
+  assert.deepEqual(await broker.call('close_chrome'), { status: 'closed' });
+});
+
 async function managedSessions(t) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'dialog-sessions-test-'));
   const browsers = new Map();

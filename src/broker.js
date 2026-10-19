@@ -86,11 +86,15 @@ export class BrowserSession {
         // Invalidate before shutdown; a failed close never leaves permission records usable.
         this.dialogs.disconnect();
         try {
-          if (this.observer?.cdp.alive) {
+          const graceful = Boolean(this.observer?.cdp.alive);
+          if (graceful) {
             await this.observer.cdp.send('Browser.close').catch(() => {});
-            if (this.chrome.waitForExit && await this.chrome.waitForExit()) return { status: 'closed' };
+            try {
+              if (this.chrome.waitForExit && await this.chrome.waitForExit()) return { status: 'closed' };
+            } catch { /* Fall back only through Chrome.close's fresh identity verification. */ }
           }
-          return await this.chrome.close();
+          const result = await this.chrome.close();
+          return graceful && result.status === 'not_running' ? { status: 'closed' } : result;
         } catch { return { status: 'close_failed' }; }
         finally { this.observer?.close(); }
       }

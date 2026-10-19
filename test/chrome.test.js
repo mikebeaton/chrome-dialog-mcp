@@ -4,6 +4,31 @@ import { validateEndpoint, windowsArguments, Chrome } from '../src/chrome.js';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const execute = promisify(execFile);
+
+for (const [name, lookup, expected] of [
+  ['live window', 'function Get-Process { [pscustomobject]@{MainWindowHandle=[IntPtr]42} }', '2A'],
+  ['process exits before Get-Process', "function Get-Process { throw 'Process exited' }", null],
+  ['process exits while reading MainWindowHandle', "function Get-Process { $w=[pscustomobject]@{}; Add-Member -InputObject $w -MemberType ScriptProperty -Name MainWindowHandle -Value { throw 'Process exited' }; $w }", null],
+]) test(`Windows identity inspection retains CIM identity: ${name}`, { skip: process.platform !== 'win32' }, async () => {
+  const snapshot = "function Get-CimInstance { [pscustomobject]@{ProcessId=123; CreationDate=[datetime]'2026-10-19T00:00:00Z'; ExecutablePath='C:\\chrome.exe'; CommandLine='chrome.exe'; SessionId=1} }; ";
+  const chrome = new Chrome('unused', { run: (command, args, options) => execute(command,
+    [...args.slice(0, -1), snapshot + lookup + '; ' + args.at(-1)], options) });
+  const actual = await chrome.inspect(123);
+  assert.equal(actual.pid, 123);
+  assert.equal(actual.executable, 'C:\\chrome.exe');
+  assert.equal(actual.commandLine, 'chrome.exe');
+  assert.equal(actual.hwnd, expected);
+});
+
+test('CIM inspection errors still fail closed', { skip: process.platform !== 'win32' }, async () => {
+  const chrome = new Chrome('unused', { run: (command, args, options) => execute(command,
+    [...args.slice(0, -1), "function Get-CimInstance { throw 'Identity unavailable' }; " + args.at(-1)], options) });
+  await assert.rejects(chrome.inspect(123), /Identity unavailable/);
+});
 
 test('only a loopback browser WebSocket endpoint can be derived', () => {
   assert.equal(validateEndpoint('12345\r\n/devtools/browser/abc-123\r\n'), 'ws://127.0.0.1:12345/devtools/browser/abc-123');
@@ -43,4 +68,38 @@ test('explicit reuse of a missing Chrome cannot launch a replacement process', a
   chrome.identity = async () => null;
   chrome.executable = async () => { assert.fail('Reuse must not try to launch Chrome'); };
   await assert.rejects(chrome.ensure({ launchIfMissing: false }), /no longer running/);
+});
+
+test('close succeeds when Chrome exits between verification and taskkill', async () => {
+  let lookups = 0;
+  let kills = 0;
+  const chrome = new Chrome('unused', { run: async (command, args) => {
+    kills++;
+    assert.equal(command, 'taskkill.exe');
+    assert.deepEqual(args, ['/PID', '123', '/T', '/F']);
+    throw new Error('Process not found');
+  } });
+  chrome.identity = async () => ++lookups === 1 ? { pid: 123 } : null;
+  assert.deepEqual(await chrome.close(), { status: 'closed' });
+  assert.equal(lookups, 2);
+  assert.equal(kills, 1);
+});
+
+for (const failure of ['still running', 'identity unavailable', 'PID reused']) test(`failed taskkill cannot report success: ${failure}`, async () => {
+  const killError = new Error('Taskkill failed');
+  let lookups = 0;
+  const chrome = new Chrome('unused', { run: async () => { throw killError; } });
+  chrome.identity = async () => {
+    if (++lookups === 1 || failure === 'still running') return { pid: 123 };
+    throw new Error(failure);
+  };
+  await assert.rejects(chrome.close(), failure === 'still running' ? killError : new RegExp(failure));
+});
+
+for (const exited of [true, false]) test(`successful taskkill still verifies process exit: ${exited}`, async () => {
+  const chrome = new Chrome('unused', { run: async () => ({}) });
+  chrome.identity = async () => ({ pid: 123 });
+  chrome.waitForExit = async () => exited;
+  if (exited) assert.deepEqual(await chrome.close(), { status: 'closed' });
+  else await assert.rejects(chrome.close(), /did not exit/);
 });
