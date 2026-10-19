@@ -8,6 +8,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const execute = promisify(execFile);
+// Cold PowerShell startup on CI can exceed the production command timeout.
+const fixtureTimeout = 60000;
 
 for (const [name, lookup, expected] of [
   ['live window', 'function Get-Process { [pscustomobject]@{MainWindowHandle=[IntPtr]42} }', '2A'],
@@ -16,7 +18,7 @@ for (const [name, lookup, expected] of [
 ]) test(`Windows identity inspection retains CIM identity: ${name}`, { skip: process.platform !== 'win32' }, async () => {
   const snapshot = "function Get-CimInstance { [pscustomobject]@{ProcessId=123; CreationDate=[datetime]'2026-10-19T00:00:00Z'; ExecutablePath='C:\\chrome.exe'; CommandLine='chrome.exe'; SessionId=1} }; ";
   const chrome = new Chrome('unused', { run: (command, args, options) => execute(command,
-    [...args.slice(0, -1), snapshot + lookup + '; ' + args.at(-1)], options) });
+    [...args.slice(0, -1), snapshot + lookup + '; ' + args.at(-1)], { ...options, timeout: fixtureTimeout }) });
   const actual = await chrome.inspect(123);
   assert.equal(actual.pid, 123);
   assert.equal(actual.executable, 'C:\\chrome.exe');
@@ -26,7 +28,7 @@ for (const [name, lookup, expected] of [
 
 test('CIM inspection errors still fail closed', { skip: process.platform !== 'win32' }, async () => {
   const chrome = new Chrome('unused', { run: (command, args, options) => execute(command,
-    [...args.slice(0, -1), "function Get-CimInstance { throw 'Identity unavailable' }; " + args.at(-1)], options) });
+    [...args.slice(0, -1), "function Get-CimInstance { throw 'Identity unavailable' }; " + args.at(-1)], { ...options, timeout: fixtureTimeout }) });
   await assert.rejects(chrome.inspect(123), /Identity unavailable/);
 });
 
