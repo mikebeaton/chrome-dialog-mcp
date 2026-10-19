@@ -44,7 +44,7 @@ Session metadata and process identity are persisted in a private directory named
 
 Without a token, creates a new session, Chrome profile/process and observer. With a token, selects only that existing session and validates its persistent process identity rather than attaching to arbitrary Chrome or starting a replacement. Ready launches return `ready` with `browser_token`, `pid`, `hwnd` and `windows_session_id`; unavailable Windows identifiers are `null`. A failed initial launch returns `launch_failed` with its token for explicit cleanup of a possible process. Only explicit launch may establish a new connection after loss. Reuse with a valid token after the process has exited fails rather than opening another browser.
 
-The tool guidance requires the user to choose and manually type the initial web address themselves, without an agent-supplied URL, and requires waiting for their explicit confirmation before Computer Use input or capture. Window identifiers are selection hints, not evidence of RDP visibility. No focus operation is provided.
+Computer Use connects directly after launch, without a pending-dialog check first. User navigation is only the fallback for insufficient site evidence or an undetermined browser URL, as described in the supported sequence. Window identifiers are selection hints, not evidence of RDP visibility. No focus operation is provided.
 
 ### `get_dialog_status(browser_token)`
 

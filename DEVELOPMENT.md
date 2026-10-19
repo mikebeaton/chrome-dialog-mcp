@@ -16,7 +16,7 @@ Each package version automatically uses its own state directory and broker. Upgr
 
 1. `launch_chrome()` creates a new Chrome process/profile and establishes observation. Keep its returned `browser_token` private and supply it on every subsequent call. Only `launch_chrome(browser_token)` explicitly reuses/reconnects that same session; it never creates a replacement process. New instances display the bundled [startup page](assets/start.html) as a local file; no page server is needed.
 2. After a fresh launch reports `ready`, use the returned Windows identifiers to select and inspect that exact window directly through Computer Use, without checking for pending dialogs first. If Computer Use refuses access for insufficient site evidence or an undetermined browser URL, ask the user to choose a valid website themselves, manually type its address into that window, wait for it to load and confirm when done. Do not supply or suggest an address. Retry the connection after confirmation.
-3. Select the returned window, observe the page, then call `start_dialog_capture(browser_token)` immediately before the anticipated operation.
+3. Observe the page, then call `start_dialog_capture(browser_token)` immediately before the anticipated operation.
 4. Perform the operation without automatic post-action Computer Use capture. Call `get_captured_dialog(browser_token, capture_id)` once to seal the interval.
 5. On success, verify URL, type and message against the operation and user instructions. Respond with that `browser_token` and `dialog_id`, confirm `get_dialog_status(browser_token)` returns `no_dialog`, then resume Computer Use.
 
@@ -45,7 +45,7 @@ For packaged installations, prerelease trials and GitHub CI, see [Releases](RELE
 | `CHROME_DIALOG_START_URL` | Optional HTTP(S) startup override; default is the bundled `assets/start.html` file. |
 | `CHROME_DIALOG_STATE_DIR` | Optional private state base folder; default `%LOCALAPPDATA%/ChromeDialogMcp`. The installed package version is always appended, including for custom locations. |
 
-The persistent broker inherits settings when first started. Its version-specific state directory contains the IPC authentication key, dialog sequence and a `sessions/` directory with separate Chrome profiles and session metadata; use a base folder private to your Windows account. Session directory names are hashes of the private tokens. Adapters using the same base folder and package version share a broker, with separate browser sessions by default. For example, version `0.2.0-rc.8` uses `%LOCALAPPDATA%/ChromeDialogMcp/0.2.0-rc.8`; an explicit base folder gets the same version suffix. Older unversioned state is left untouched. Browser tokens belong to their original version's broker and do not transfer across upgrades. Reinstalling the same version uses its existing state.
+The persistent broker inherits settings when first started. Its version-specific state directory contains the IPC authentication key, dialog sequence and a `sessions/` directory with separate Chrome profiles and session metadata; use a base folder private to your Windows account. Session directory names are hashes of the private tokens. Adapters using the same base folder and package version share a broker, with separate browser sessions by default. For example, version `0.2.0-rc.9` uses `%LOCALAPPDATA%/ChromeDialogMcp/0.2.0-rc.9`; an explicit base folder gets the same version suffix. Older unversioned state is left untouched. Browser tokens belong to their original version's broker and do not transfer across upgrades. Reinstalling the same version uses its existing state.
 
 ## Tools
 
@@ -79,7 +79,11 @@ node --test test/integration.test.js
 
 Unit/stdio tests cover isolated sessions, token validation/revocation/restart, exact event counts, consumed tokens, denied uncaptured IDs, replacement, connection loss, durable IDs, explicit reconnection, process identity and authenticated adapter reuse. Installed-Chrome integration covers two separate processes/profiles, independent concurrent capture counts, refused cross-session IDs, scoped close, prompt responses and simulated replacement through two stdio adapters. Its separate CDP driver is test-only.
 
-Earlier manual Computer Use validation passed anticipated confirm accept/dismiss with the previous lookup API: standalone click → MCP response → Computer Use capture. Immediate post-click capture was the isolated turn-ending action. Manual address-bar navigation succeeded where startup navigation and scripted redirects failed. The underlying cause and RDP visibility remain unverified.
+Earlier manual Computer Use validation passed anticipated confirm accept/dismiss with the previous lookup API: standalone click → MCP response → Computer Use capture. Immediate post-click capture was the isolated turn-ending action.
+
+Direct Computer Use connection to the local startup page passed, followed by a captured confirm acceptance and resumed Computer Use. User testing with fresh agents on rc.8 also passed without manual navigation. Earlier URL-evidence refusals were resolved by manual address-bar navigation; this is now a fallback, not a required startup step. The underlying cause of those refusals and RDP visibility remain unverified.
+
+The separate `coordinate input geometry is unavailable` error was resolved by confirming `no_dialog`, capturing the same window with screenshot and text, then retrying the refused click with its existing capture ID. This recovery applies only after that error; it adds no preventive screenshots.
 
 Manual capture-flow trials on 2026-10-19 used the existing managed window after the initial capture retry succeeded. Trial 1 observed one opening whose dialog had closed and returned `dialog_not_pending`. Trial 2, with undisclosed human intervention, counted two openings and returned `incorrect_dialog_count` with `observed_count: 2`. Neither released a response ID or sent a broker response; the turn continued. One dialog remained pending for the user to resolve.
 
