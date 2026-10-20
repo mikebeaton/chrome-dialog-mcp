@@ -1,6 +1,6 @@
 {
   "name": "chrome-dialog-mcp",
-  "version": "1.0.1-rc.2",
+  "version": "1.0.1",
   "private": true,
   "license": "0BSD",
   "type": "module",

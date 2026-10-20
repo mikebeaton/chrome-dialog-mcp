@@ -87,6 +87,8 @@ Direct Computer Use connection to the local startup page passed, followed by a c
 
 The separate `coordinate input geometry is unavailable` error was resolved by confirming `no_dialog`, capturing the same window with screenshot and text, then retrying the refused click with its existing capture ID. This recovery applies only after that error; it adds no preventive screenshots. The main agent subsequently encountered this error and completed the recovery using the MCP guidance.
 
+User testing of 1.0.1-rc.2 confirmed recognition after an unexpected JavaScript prompt caused the Windows URL-verification turn stop. The agent offered the managed workflow, then submitted text successfully in its managed window after the user requested a retry on a later turn.
+
 Manual capture-flow trials on 2026-10-19 used the existing managed window after the initial capture retry succeeded. Trial 1 observed one opening whose dialog had closed and returned `dialog_not_pending`. Trial 2, with undisclosed human intervention, counted two openings and returned `incorrect_dialog_count` with `observed_count: 2`. Neither released a response ID or sent a broker response; the turn continued. One dialog remained pending for the user to resolve.
 
 A subsequent capture released dialog ID 4 with the expected fixture provenance. After user intervention, a dismissal attempt using ID 4 returned `stale_dialog`; one replacement dialog remained pending. The broker did not act on that replacement.
