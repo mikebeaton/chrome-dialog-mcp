@@ -12,7 +12,8 @@
   "scripts": {
     "start": "node src/adapter.js",
     "test": "node --test",
-    "check": "node --check src/adapter.js && node --check src/broker.js && node --check src/chrome.js && node --check src/cdp.js && node --check src/dialogs.js && node --check src/ipc.js && node --check scripts/package-release.js && node --check scripts/verify-package.js",
+    "check": "node --check src/adapter.js && node --check src/broker.js && node --check src/chrome.js && node --check src/cdp.js && node --check src/dialogs.js && node --check src/ipc.js && node --check scripts/package-release.js && node --check scripts/verify-package.js && node scripts/update-start-page.js --check",
+    "version": "node scripts/update-start-page.js",
     "release:pack": "node scripts/package-release.js",
     "release:verify": "node scripts/verify-package.js"
   },

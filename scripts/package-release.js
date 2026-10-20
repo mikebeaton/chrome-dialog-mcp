@@ -10,6 +10,10 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
 const lock = JSON.parse(await readFile(path.join(root, 'npm-shrinkwrap.json'), 'utf8'));
 if (lock.version !== pkg.version || lock.packages[''].version !== pkg.version) throw new Error('Package and shrinkwrap versions must match');
+const startPage = await readFile(path.join(root, 'assets/start.html'), 'utf8');
+if (!['title', 'p'].every(tag => startPage.includes(`<${tag}>Chrome Dialog MCP ${pkg.version}</${tag}>`))) {
+  throw new Error('Startup page version must match package.json; run node scripts/update-start-page.js');
+}
 if (process.env.GITHUB_REF_TYPE === 'tag' && process.env.GITHUB_REF_NAME !== `v${pkg.version}`) throw new Error('Release tag must match the package version');
 if (!process.env.npm_execpath) throw new Error('Run through npm run release:pack');
 const commit = (await execute('git', ['rev-parse', 'HEAD'], { cwd: root, windowsHide: true })).stdout.trim();

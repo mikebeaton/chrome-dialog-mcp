@@ -12,6 +12,8 @@ Use SemVer for the MCP contract and observable broker behaviour: increment major
 
 Tags are `v<package version>`. Never move a published tag or replace an existing version's artifact. `package.json` supplies the MCP version and must match both root version fields in `npm-shrinkwrap.json`; internal IPC compatibility is versioned separately.
 
+Use `npm version <version> --no-git-tag-version` to update the package, shrinkwrap and startup page label together, then review and commit. Checks and packaging reject a startup page whose version differs from the package.
+
 The runtime appends this package version to its state base folder automatically. Each new release gets separate broker credentials, browser profiles and session metadata without a Codex environment setting. Reinstalling the same version reuses that version's state; source changes need a version bump to isolate them from an already-running broker.
 
 ## Build and verify
