@@ -52,7 +52,7 @@ For an installation under your own Windows account, use a path such as `C:/Users
 
 ## Configure Codex
 
-In Codex, open **Settings → Configuration**. Select **Open config.toml**, the small grey link beside **User config**.
+In Codex, open **Settings → Configuration**. Select **Open config.toml**, the small grey link beside **User config**, only visible when **Codex** settings are selected.
 
 Add the following settings to the file. If a `chrome_dialog` entry already exists, update it:
 
@@ -65,16 +65,15 @@ tool_timeout_sec = 60
 
 Adjust the path in `args` if you chose another installation folder.
 
-
 Save the file and restart Codex. Codex starts the MCP automatically.
 
-## Start a browser
+## Using it
 
-Start a new local chat and ask:
+Your agent should recognise this tool automatically when it encounters this problem, offering to retry in a managed browser on your next turn.
 
-> Use chrome_dialog to launch a managed Chrome window.
+To avoid the problem in the first place you can ask the agent to use chrome_dialog to launch a managed Chrome window.
 
-Codex opens a window labelled **Chrome Dialog MCP** and connects to it.
+When the agent launches a managed browser, Codex opens a window labelled **Chrome Dialog MCP** and connects to it.
 
 Each agent launches a separate Chrome process and profile, keeping its browser state separate when you switch between chats.
 
