@@ -1,7 +1,7 @@
 // Opt in: launches disposable Chrome. CDP navigation and responses below are test drivers only.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import http from 'node:http';
@@ -12,6 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const runtimeRoot = process.env.CHROME_DIALOG_PACKAGE_ROOT
   ? pathToFileURL(path.resolve(process.env.CHROME_DIALOG_PACKAGE_ROOT) + path.sep) : new URL('../', import.meta.url);
+const { version: runtimeVersion } = JSON.parse(await readFile(new URL('package.json', runtimeRoot), 'utf8'));
 const { startBroker } = await import(new URL('src/broker.js', runtimeRoot));
 const { Cdp } = await import(new URL('src/cdp.js', runtimeRoot));
 const { configuration } = await import(new URL('src/ipc.js', runtimeRoot));
@@ -116,7 +117,7 @@ test('installed Chrome: isolated browser sessions, exact counts, two adapters, p
     await until(() => driver.send('Runtime.evaluate', {
       expression: '({url: location.href, text: document.body?.innerText})', returnByValue: true,
     }, sessionId), r => r.result?.value?.url === startupUrl &&
-      r.result.value.text?.trim() === 'Chrome Dialog MCP',
+      r.result.value.text?.trim() === `Chrome Dialog MCP ${runtimeVersion}`,
     'bundled file startup page did not load');
   }
   const url = `http://127.0.0.1:${web.address().port}/settings`;

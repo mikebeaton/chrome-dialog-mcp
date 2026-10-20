@@ -1,12 +1,12 @@
 {
   "name": "chrome-dialog-mcp",
-  "version": "1.0.1-rc.1",
+  "version": "1.0.1-rc.2",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "chrome-dialog-mcp",
-      "version": "1.0.1-rc.1",
+      "version": "1.0.1-rc.2",
       "license": "0BSD",
       "os": [
         "win32"

@@ -38,17 +38,17 @@ Check your Node version with `node --version` in PowerShell.
 
 ## Install
 
-Download `chrome-dialog-mcp-1.0.1-rc.1.tgz` from [GitHub Releases](https://github.com/mikebeaton/chrome-dialog-mcp/releases). The download can stay in any convenient folder; the install command chooses where the program will live.
+Download `chrome-dialog-mcp-1.0.1-rc.2.tgz` from [GitHub Releases](https://github.com/mikebeaton/chrome-dialog-mcp/releases). The download can stay in any convenient folder; the install command chooses where the program will live.
 
 Open PowerShell in the folder containing the download and run:
 
 ```powershell
-npm install --prefix C:/Tools/chrome-dialog-mcp/1.0.1-rc.1 --ignore-scripts --omit=dev ./chrome-dialog-mcp-1.0.1-rc.1.tgz
+npm install --prefix C:/Tools/chrome-dialog-mcp/1.0.1-rc.2 --ignore-scripts --omit=dev ./chrome-dialog-mcp-1.0.1-rc.2.tgz
 ```
 
-npm extracts the package and installs the libraries it needs. The `--prefix` option selects the installation folder: `C:\Tools\chrome-dialog-mcp\1.0.1-rc.1` in this example. Keep that folder while the MCP is configured.
+npm extracts the package and installs the libraries it needs. The `--prefix` option selects the installation folder: `C:\Tools\chrome-dialog-mcp\1.0.1-rc.2` in this example. Keep that folder while the MCP is configured.
 
-For an installation under your own Windows account, use a path such as `C:/Users/YOUR_NAME/Tools/chrome-dialog-mcp/1.0.1-rc.1` after `--prefix`. Replace `YOUR_NAME` with your Windows user-folder name.
+For an installation under your own Windows account, use a path such as `C:/Users/YOUR_NAME/Tools/chrome-dialog-mcp/1.0.1-rc.2` after `--prefix`. Replace `YOUR_NAME` with your Windows user-folder name.
 
 ## Configure Codex
 
@@ -59,7 +59,7 @@ Add the following settings to the file. If a `chrome_dialog` entry already exist
 ```toml
 [mcp_servers.chrome_dialog]
 command = "node"
-args = ["C:/Tools/chrome-dialog-mcp/1.0.1-rc.1/node_modules/chrome-dialog-mcp/src/adapter.js"]
+args = ["C:/Tools/chrome-dialog-mcp/1.0.1-rc.2/node_modules/chrome-dialog-mcp/src/adapter.js"]
 tool_timeout_sec = 60
 ```
 
