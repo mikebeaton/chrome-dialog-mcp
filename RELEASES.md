@@ -26,7 +26,7 @@ npm run check
 npm test
 npm run release:pack
 npm run release:verify
-$env:CHROME_DIALOG_PACKAGE_ROOT = "$PWD/.work/release-verify/1.0.0 installed package/node_modules/chrome-dialog-mcp"
+$env:CHROME_DIALOG_PACKAGE_ROOT = "$PWD/.work/release-verify/1.0.1-rc.1 installed package/node_modules/chrome-dialog-mcp"
 $env:CHROME_DIALOG_INTEGRATION = '1'
 node --test test/integration.test.js
 ```
@@ -44,9 +44,9 @@ Existing artifacts and verification directories are not overwritten. Use a new v
 For example, after updating and committing the package/shrinkwrap version:
 
 ```powershell
-git tag -a v1.0.0 -m "Chrome Dialog MCP 1.0.0"
+git tag -a v1.0.1-rc.1 -m "Chrome Dialog MCP 1.0.1-rc.1"
 git push origin HEAD
-git push origin v1.0.0
+git push origin v1.0.1-rc.1
 ```
 
 Protect release tags and the main branch in GitHub. A manual workflow run produces downloadable artifacts without creating a release.
