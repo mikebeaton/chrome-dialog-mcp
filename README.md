@@ -1,10 +1,22 @@
 # Chrome Dialog MCP
 
-Chrome's native dialogs interrupt Computer Use. Chrome Dialog MCP lets Codex check where a dialog came from and respond according to your instructions.
+On Windows only, Codex Computer Use stops the current turn when examining a newly opened native Chrome dialog, giving the following error message, which always stops the turn and requires user intervention:
 
-Using it, agents working via Computer Use can handle expected JavaScript dialogs without any user intervention. This includes OK/Cancel confirmations and prompts for text. The Chrome-supplied originating web address, dialog type and message are available for the agent to check and respond to.
+```
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Computer Use has been stopped for this turn because it could not determine the current browser URL on Windows with enough confidence to enforce policy. Stop your work and send a final message noting why Computer Use ended."
+    }
+  ],
+  "isError": true
+}
+```
 
-Computer Use stops if it examines the screen while a native dialog is open. This MCP lets the agent handle expected dialogs before that happens, but unexpected dialogs still cause interruptions.
+This MCP lets agents handle expected dialogs (including OK/Cancel confirmations and prompts for text) securely via a different route, avoiding turn stopping. Unexpected dialogs still cause interruptions.
+
+The Chrome-supplied originating web address, dialog type and message are available for the agent to check and respond to.
 
 ## Security
 
