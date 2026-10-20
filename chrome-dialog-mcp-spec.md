@@ -18,7 +18,7 @@ Only dialogs anticipated before their triggering operation are supported. Unexpe
 
 On a failed capture, the agent stops handling attempts and informs the user, including the observed count if supplied. It does not respond, silently re-arm, repeat the operation or use a fallback lookup. The user resolves any remaining dialog. This stops the operation attempt, not the conversation turn.
 
-Computer Use capture while a native dialog is pending can end the turn because it cannot establish the browser URL. The MCP offers no general recovery from that stop. Its startup page does not change Computer Use policy or replace per-dialog authorisation.
+Computer Use capture while a native dialog is pending can end the turn because it cannot establish the browser URL. The agent obeys that turn stop. On a later user request to continue or retry, the Windows URL-verification error is a reason to offer the managed capture workflow. A previously unexpected dialog can be anticipated on that later attempt once its trigger is understood. The agent checks existing effects and user authorisation before repeating the operation, prepares the task in a managed window and arms capture before the trigger. The MCP cannot adopt the original ordinary Chrome window or operate its pending dialog. This later attempt is distinct from automatic recovery or retry after a failed MCP capture. The startup page does not change Computer Use policy or replace per-dialog authorisation.
 
 ## Architecture
 
@@ -113,6 +113,6 @@ Explicitly closes only that session's Chrome instance and revokes its token on s
 
 ## Tool guidance and validation
 
-Server instructions and tool descriptions contain the supported sequence, direct startup connection with manual navigation as a fallback, independent provenance/authorisation checks, single-use reads, and the requirement to stop handling and inform the user after capture failure. A failed count cannot be bypassed through a latest-dialog lookup; that operation is removed.
+Server instructions and tool descriptions contain the supported sequence, recognition of the Windows URL-verification error and the option of a later user-requested managed attempt, direct startup connection with manual navigation as a fallback, independent provenance/authorisation checks, single-use reads, and the requirement to stop handling and inform the user after capture failure. A failed count cannot be bypassed through a latest-dialog lookup; that operation is removed.
 
 Tests cover isolated browser sessions, cross-session identifiers/counts, token validation/revocation/restart, zero/one/multiple openings, closed and identical replacement dialogs, separate capture/response IDs, guessed IDs, replay, target/session changes, connection loss, explicit reconnect, two adapters, IPC authentication, process identity and scoped close. Installed-Chrome integration uses two distinct processes/profiles and a separate test driver to simulate human replacement; it verifies no broker response command is sent on count failure. Manual Computer Use validation of the capture flow and blind user intervention is recorded separately from automated integration.

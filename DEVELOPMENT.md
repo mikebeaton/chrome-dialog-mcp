@@ -26,6 +26,8 @@ After capture failure, stop handling attempts and tell the user what happened, i
 
 Capturing a pending dialog through Computer Use can end the turn because its URL cannot be established. There is no general asynchronous recovery or push notification. The startup page does not change Computer Use policy.
 
+The MCP guidance and launch description identify the Windows "could not determine the current browser URL" error as a reason to offer this workflow on a later user-requested attempt, after obeying the turn stop. A dialog first encountered unexpectedly can be anticipated on that later attempt once its trigger is understood. The task is prepared in a managed window, with capture armed before the trigger; existing effects and authorisation are checked before repeating the operation. Ordinary Chrome windows and their pending dialogs cannot be adopted. This guidance does not relax the separate rules for a failed MCP capture.
+
 ## Run
 
 Requires Windows, Node.js 24+, and Google Chrome.
